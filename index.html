@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>BITDAY_Sync</title>
+<meta name="viewport" content="user-scalable = no">
+
+<script type="text/javascript"src="suncalc/suncalc.js"></script>
+<script>
+window.onload = onLoad;
+
+var latitudeStored;
+var longitudeStored;
+var menuVisible = false;
+
+function onLoad()
+{
+	getLocation();
+	//testMe();
+}
+
+function testMe(){
+	console.log("Test Me");
+	var timeOfDay = "midMorning";
+	document.body.className = timeOfDay;
+	setClouds(timeOfDay);
+}	
+
+function randomBackground()
+{
+	var timeOfDay = ['midNight', 'lateNight', 'earlyMorning', 'midMorning', 'lateMorning', 'earlyAfternoon', 'midAfternoon', 'lateAfternoon', 
+										'earlyEvening', 'midEvening', 'lateEvening', 'earlyNight']
+	var randTimeOfDay = timeOfDay[Math.floor(Math.random() * timeOfDay.length)];
+	document.body.className = randTimeOfDay;
+	setClouds(randTimeOfDay);
+}	
+
+function defaultBackground()
+{
+	// The following code runs this function every 5 seconds
+	var d = new Date(),
+		n = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), (d.getMinutes() - (d.getMinutes() % 3)) + 3, 0, 0),
+		e = n - d;
+	window.setTimeout(defaultBackground, e);
+
+	var h = d.getHours();		
+	if (h >= 0 && h < 2){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "midNight";
+		setClouds("midNight");
+	}
+	else if (h >= 2 && h < 5){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "lateNight";
+		setClouds("lateNight");
+	}
+	else if (h >= 5 && h < 10){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "earlyMorning";
+		setClouds("earlyMorning");
+	}
+	else if (h >= 10 && h < 11){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "midMorning";
+		setClouds("midMorning");
+	}
+	else if (h >= 11 && h < 12){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "lateMorning";
+		setClouds("lateMorning");
+	}
+	else if (h >= 12 && h < 13){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "earlyAfternoon";
+		setClouds("earlyAfternoon");
+	}
+	else if (h >= 13 && h < 15){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "midAfternoon";
+		setClouds("midAfternoon");
+	}
+	else if (h >= 15 && h < 16){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "lateAfternoon";
+		setClouds("lateAfternoon");
+	}
+	else if (h >= 16 && h < 18){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "earlyEvening";
+		setClouds("earlyEvening");
+	}
+	else if (h >= 18 && h < 20){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "midEvening";
+		setClouds("midEvening");
+	}
+	else if (h >= 20 && h < 22){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "lateEvening";
+		setClouds("lateEvening");
+	}
+	else if (h >= 22){
+		// Depending on time, apply theme to ‘body’
+		document.body.className = "earlyNight";
+		setClouds("earlyNight");
+	}
+}	
+
+function settings(){
+	// Show or hide settings div depending on state of menuVisisble
+	if (menuVisible == false) {
+		// If localStorage doesn't exist or there is no location values
+		if ((typeof(localStorage) == "undefined") || 
+			localStorage.getItem('latitudeStored') == null || localStorage.getItem('longitudeStored') == null){	
+			// Set placeholders to lat and long
+			document.getElementById("latitudeBox").placeholder = "lat";
+			document.getElementById("longitudeBox").placeholder = "long";
+			document.getElementById("settingsBox").style.display = "block";
+			menuVisible = true;
+		}else{
+			document.getElementById("latitudeBox").placeholder = localStorage.getItem('latitudeStored');
+			document.getElementById("longitudeBox").placeholder = localStorage.getItem('longitudeStored');
+			document.getElementById("settingsBox").style.display = "block";		
+			menuVisible = true;
+		}
+	}else{
+		// Hide settings menu
+		document.getElementById("settingsBox").style.display = "none";
+		menuVisible = false;
+	}
+}
+
+function reloadBackground(){
+	// Check to see if user input location information in the input boxes before reloading
+	if ((document.getElementById("latitudeBox").value != "" ) && (document.getElementById("longitudeBox").value != "")){
+		var lat = document.getElementById("latitudeBox").value;
+		var long = document.getElementById("longitudeBox").value;
+		// Save new information input by user to the localStorage
+		localStorage.setItem('latitudeStored', lat);
+		localStorage.setItem('longitudeStored', long);
+		//syncBackground();
+		// Try this:? window.location.href=window.location
+		location.reload(true);
+	}else{
+		location.reload(true);
+	}
+}
+
+function closeSettings(){
+	// Hide settings menu
+	document.getElementById("settingsBox").style.display = "none";
+	menuVisible = false;
+}
+
+function saveSettings(){
+	// Get items from input boxer if user entered some data otherwise, pull data from localstorage 
+	if ((document.getElementById("latitudeBox").value != "" ) && (document.getElementById("longitudeBox").value != "")){
+		var lat = document.getElementById("latitudeBox").value;
+		var long = document.getElementById("longitudeBox").value;
+		// Save new information input by user to the localStorage
+		localStorage.setItem("latitudeStored", lat);
+		localStorage.setItem("longitudeStored", long);
+		syncBackground();
+		// Hide settings menu
+		document.getElementById("settingsBox").style.display = "none";
+		menuVisible = false;
+	// If localStorage doesn't exist or there is no location values
+	}else if ((typeof(localStorage) == "undefined") || 
+		localStorage.getItem('latitudeStored') == null || localStorage.getItem('longitudeStored') == null){	
+		// fallback to default times
+		console.log("Falling back to default timing...");
+		defaultBackground();
+		// Hide settings menu
+		document.getElementById("settingsBox").style.display = "none";
+		menuVisible = false;
+	}else{
+		syncBackground();
+		// Hide settings menu
+		document.getElementById("settingsBox").style.display = "none";
+		menuVisible = false;
+	}			
+}
+
+function getLocation(){
+	// If localStorage doesn't exist or there is no location values
+	if ((typeof(localStorage) == "undefined") || 
+		localStorage.getItem('latitudeStored') == null || localStorage.getItem('longitudeStored') == null){	
+		// fallback to default times
+		console.log("Falling back to default timing...");
+		defaultBackground();
+	}else{		
+		syncBackground();		
+	}
+}
+
+function syncBackground (){
+	// The following code runs this function every X minute(s) 
+	var d = new Date(),
+		n = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), (d.getMinutes() - (d.getMinutes() % 1)) + 1, 0, 0),
+		e = n - d;
+	window.setTimeout(syncBackground, e);
+
+	var latitude = Number(localStorage.getItem('latitudeStored'));
+	var longitude = Number(localStorage.getItem('longitudeStored'));
+	console.log("Latitude in localStorage= " + latitude);
+	console.log("Longitude in localStorage= " + longitude);
+
+	var d = new Date();
+	// Calling the awesome SunCalc JS library by Travis Cl to figure out the correct sunrise and sunset for the user's location
+	var times = SunCalc.getTimes(d, latitude, longitude);
+	
+	// Format sunrise time from the Date object
+	var sunriseStr = times.sunrise.getHours() + ':' + times.sunrise.getMinutes();
+	var solarNoonStr = times.solarNoon.getHours() + ':' + times.solarNoon.getMinutes();
+	var goldenHourStr = times.goldenHour.getHours() + ':' + times.goldenHour.getMinutes();
+	var sunsetStartStr = times.sunsetStart.getHours() + ':' + times.sunsetStart.getMinutes();
+	var sunsetStr = times.sunset.getHours() + ':' + times.sunset.getMinutes();
+	var duskStr = times.dusk.getHours() + ':' + times.dusk.getMinutes();
+	var nightStr = times.night.getHours() + ':' + times.night.getMinutes();
+	console.log("Sunrise: " + sunriseStr);
+	console.log("Solar Noon: " + solarNoonStr);
+	console.log("Golden Hour: " + goldenHourStr);
+	console.log("Sunset Start: " + sunsetStartStr);
+	console.log("Sunset End: " + sunsetStr);
+	console.log("Dusk: " + duskStr);
+	console.log("Night: " + nightStr);
+	
+	var dMin = d.getHours()*60 + d.getMinutes();
+	var sunriseMin = times.sunrise.getHours()*60 + times.sunrise.getMinutes();
+	var solarNoonMin = times.solarNoon.getHours()*60 + times.solarNoon.getMinutes();
+	var goldenHourMin = times.goldenHour.getHours()*60 + times.goldenHour.getMinutes();
+	var sunsetStartMin = times.sunsetStart.getHours()*60 + times.sunsetStart.getMinutes();
+	var duskMin = times.dusk.getHours()*60 + times.dusk.getMinutes();
+	var nightMin = times.night.getHours()*60 + times.night.getMinutes();
+
+	var morningInt = Math.floor((solarNoonMin - sunriseMin) / 4);
+	//console.log("--morningInt=" + morningInt);
+	var afternoonInt = Math.floor((goldenHourMin - solarNoonMin) / 2);
+	//console.log("--afternoonInt=" + afternoonInt);
+	var sunsetInt = Math.floor((duskMin - sunsetStartMin) / 2);
+	console.log("--sunsetInt=" + sunsetInt);
+	var lateNightInt = (sunriseMin) / 2;
+	//console.log("--lateNightInt=" + lateNightInt);
+
+	
+	// Depending on time of day, apply theme to ‘body’
+	// From img01 to img05 (solar noon)
+	if (dMin >= sunriseMin && dMin < (sunriseMin + morningInt)){
+		document.body.className = "earlyMorning";
+		setClouds("earlymorning");
+	}
+	else if (dMin >= (sunriseMin + morningInt) && dMin < (sunriseMin + morningInt*2)){
+		document.body.className = "midMorning";
+		setClouds("midMorning");
+	}
+	else if (dMin >= (sunriseMin + morningInt*2) && dMin < (sunriseMin + morningInt*3)){
+		document.body.className = "lateMorning";	
+		setClouds("lateMorning");
+	}
+	else if (dMin >= (sunriseMin + morningInt*3) && dMin < solarNoonMin){
+		document.body.className = "earlyAfternoon";
+		setClouds("earlyAfternoon");
+	}
+	else if (dMin >= solarNoonMin && dMin < (solarNoonMin + afternoonInt)){
+		document.body.className = "midAfternoon";
+		setClouds("midAfternoon");
+	}
+	// From img06 to img07 (golden hour)
+	else if (dMin >= (solarNoonMin + afternoonInt) && dMin < goldenHourMin){
+		document.body.className = "lateAfternoon";
+		setClouds("lateAfternoon");
+	}	
+	else if (dMin >= goldenHourMin && dMin < sunsetStartMin){
+		document.body.className = "earlyEvening";
+		setClouds("earlyEvening");
+	}
+	// From img08 (mid sunset) to img09
+	else if (dMin >= sunsetStartMin && dMin < (sunsetStartMin + sunsetInt)){
+		document.body.className = "midEvening";
+		setClouds("midEvening");
+	}
+	else if (dMin >= (sunsetStartMin + sunsetInt) && dMin < duskMin){
+		document.body.className = "lateEvening";
+		setClouds("lateEvening");
+	}
+	// img10 (night start)
+	else if (dMin >= duskMin && dMin < 1440){
+		document.body.className = "earlyNight";
+		setClouds("earlyNight");
+	}
+	// From img11 (midnight) to img12
+	else if (dMin >= 0 && dMin < (sunriseMin - lateNightInt)){
+		document.body.className = "midNight";
+		setClouds("midNight");
+	}
+	else if (dMin >= (sunriseMin - lateNightInt) && dMin < sunriseMin){
+		document.body.className = "lateNight";
+		setClouds("lateNight");
+	}		
+}
+
+function setClouds(timeOfDay){
+        console.log ("clouds time of day: " + timeOfDay);
+				
+		if (timeOfDay == "earlyMorning"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_earlyMorning").style.display = "block";
+			document.getElementById("cloud2_earlyMorning").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_earlyMorning").style.animation = 'none';
+			document.getElementById("cloud2_earlyMorning").style.animation = 'none';
+			document.getElementById("cloud1_earlyMorning").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_earlyMorning").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "midMorning"){
+        	// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_midMorning").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_midMorning").style.animation = 'none';
+			document.getElementById("cloud1_midMorning").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "lateMorning"){
+        	// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_lateMorning").style.display = "block";
+			document.getElementById("cloud2_lateMorning").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_lateMorning").style.animation = 'none';
+			document.getElementById("cloud2_lateMorning").style.animation = 'none';
+			document.getElementById("cloud1_lateMorning").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_lateMorning").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "earlyAfternoon"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_afternoon").style.display = "block";
+			document.getElementById("cloud2_afternoon").style.display = "block";
+			document.getElementById("cloud3_afternoon").style.display = "block";
+			
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_afternoon").style.animation = 'none';
+			document.getElementById("cloud2_afternoon").style.animation = 'none';
+			document.getElementById("cloud3_afternoon").style.animation = 'none';
+			document.getElementById("cloud1_afternoon").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_afternoon").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+			document.getElementById("cloud3_afternoon").style.animation = "cloudAppearRight 30s linear 0s normal, clouds 320s linear 30s infinite normal";
+		}
+		if (timeOfDay == "midAfternoon"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_afternoon").style.display = "block";
+			document.getElementById("cloud2_afternoon").style.display = "block";
+			
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_afternoon").style.animation = 'none';
+			document.getElementById("cloud2_afternoon").style.animation = 'none';
+			document.getElementById("cloud3_afternoon").style.animation = 'none';
+			document.getElementById("cloud1_afternoon").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_afternoon").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+			document.getElementById("cloud3_afternoon").style.animation = "cloudAppearRight 30s linear 0s normal, clouds 320s linear 30s infinite normal";
+		}
+		if (timeOfDay == "lateAfternoon"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_afternoon").style.display = "block";
+			document.getElementById("cloud2_afternoon").style.display = "block";
+			
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_afternoon").style.animation = 'none';
+			document.getElementById("cloud2_afternoon").style.animation = 'none';
+			document.getElementById("cloud3_afternoon").style.animation = 'none';
+			document.getElementById("cloud1_afternoon").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_afternoon").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+			document.getElementById("cloud3_afternoon").style.animation = "cloudAppearRight 30s linear 0s normal, clouds 320s linear 30s infinite normal";
+		}
+		if (timeOfDay == "earlyEvening"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_earlyEvening").style.display = "block";
+			document.getElementById("cloud2_earlyEvening").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_earlyEvening").style.animation = 'none';
+			document.getElementById("cloud2_earlyEvening").style.animation = 'none';
+			document.getElementById("cloud1_earlyEvening").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_earlyEvening").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "midEvening"){
+        	// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_midEvening").style.display = "block";
+			document.getElementById("cloud2_midEvening").style.display = "block";
+			
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_midEvening").style.animation = 'none';
+			document.getElementById("cloud2_midEvening").style.animation = 'none';
+			document.getElementById("cloud1_midEvening").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_midEvening").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "lateEvening"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_lateEvening").style.display = "block";
+			document.getElementById("cloud2_lateEvening").style.display = "block";
+			
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_lateEvening").style.animation = 'none';
+			document.getElementById("cloud2_lateEvening").style.animation = 'none';
+			document.getElementById("cloud1_lateEvening").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_lateEvening").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "earlyNight"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_night").style.display = "block";
+			document.getElementById("cloud2_night").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_night").style.animation = 'none';
+			document.getElementById("cloud2_night").style.animation = 'none';
+			document.getElementById("cloud1_night").style.animation = "cloudAppearCenter 150s normal, clouds 300s linear 150s infinite normal";
+			document.getElementById("cloud2_night").style.animation = "cloudAppearLeft 300s normal, clouds 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "midNight"){
+			// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_night").style.display = "block";
+			document.getElementById("cloud2_night").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_night").style.animation = 'none';
+			document.getElementById("cloud2_night").style.animation = 'none';
+			document.getElementById("cloud1_night").style.animation = "cloudAppearCenter_midNight 150s normal, clouds_midNight 300s linear 150s infinite normal";
+			document.getElementById("cloud2_night").style.animation = "cloudAppearLeft_midNight 300s normal, clouds_midNight 300s linear 300s infinite normal";
+		}
+		if (timeOfDay == "lateNight"){
+        	// Show correct clouds
+			killClouds();
+			document.getElementById("cloud1_night").style.display = "block";
+			document.getElementById("cloud2_night").style.display = "block";
+
+			// Reset animationby forcing an empty animation
+			document.getElementById("cloud1_night").style.animation = 'none';
+			document.getElementById("cloud2_night").style.animation = 'none';
+			document.getElementById("cloud1_night").style.animation = "cloudAppearCenter_lateNight 150s normal, clouds_lateNight 300s linear 150s infinite normal";
+			document.getElementById("cloud2_night").style.animation = "cloudAppearLeft_lateNight 300s normal, clouds_lateNight 300s linear 300s infinite normal";
+		}			
+}
+
+function killClouds(){
+	// Hide all cloud divs
+	document.getElementById("cloud1_earlyMorning").style.display = "none";
+	document.getElementById("cloud2_earlyMorning").style.display = "none";
+	document.getElementById("cloud1_midMorning").style.display = "none";
+	document.getElementById("cloud1_lateMorning").style.display = "none";
+	document.getElementById("cloud2_lateMorning").style.display = "none";
+	document.getElementById("cloud1_afternoon").style.display = "none";
+	document.getElementById("cloud2_afternoon").style.display = "none";
+	document.getElementById("cloud3_afternoon").style.display = "none";
+	document.getElementById("cloud1_earlyEvening").style.display = "none";
+	document.getElementById("cloud2_earlyEvening").style.display = "none";
+	document.getElementById("cloud1_midEvening").style.display = "none";
+	document.getElementById("cloud2_midEvening").style.display = "none";
+	document.getElementById("cloud1_lateEvening").style.display = "none";
+	document.getElementById("cloud2_lateEvening").style.display = "none";
+	document.getElementById("cloud1_night").style.display = "none";
+	document.getElementById("cloud2_night").style.display = "none";
+}
+
+</script>
+
+<style>
+
+#empty{
+	position: fixed;
+	top: 0%;
+	width: 100%;
+	height: 100%;
+	animation:empty 1s linear 0s infinite normal;
+}
+
+#cloud1_earlyMorning{
+	position:fixed;
+	top: 56%;
+	width: 200px;
+	height: 100px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_earlyMorning{
+	position:fixed;
+	top: 60%;
+	width: 225px;
+	height: 130px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_midMorning{
+	position:fixed;
+	top: 56%;
+	width: 225px;
+	height: 130px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_lateMorning{
+	position:fixed;
+	top: 60%;
+	width: 200px;
+	height: 100px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_lateMorning{
+	position:fixed;
+	top: 57%;
+	width: 225px;
+	height: 130px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_afternoon{
+	position:fixed;
+	top: 50%;
+	width: 285px;
+	height: 211px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_afternoon{
+	position:fixed;
+	top: 58%;
+	width: 284px;
+	height: 103px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud3_afternoon{
+	position:fixed;
+	top: 58%;
+	width: 200px;
+	height: 100px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_earlyEvening{
+	position:fixed;
+	top: 58%;
+	width: 200px;
+	height: 100px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_earlyEvening{
+	position:fixed;
+	top: 60%;
+	width: 284px;
+	height: 103px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_midEvening{
+	position:fixed;
+	top: 58%;
+	width: 200px;
+	height: 100px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_midEvening{
+	position:fixed;
+	top: 62%;
+	width: 284px;
+	height: 103px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_lateEvening{
+	position:fixed;
+	top: 58%;
+	width: 200px;
+	height: 100px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_lateEvening{
+	position:fixed;
+	top: 62%;
+	width: 284px;
+	height: 103px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud1_night{
+	position:fixed;
+	top: 55%;
+	width: 310px;
+	height: 211px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+#cloud2_night
+{
+	position:fixed;
+	top: 55%;
+	width: 372px;
+	height: 140px;
+	animation:clouds 240s linear 0s infinite normal;
+}
+
+@keyframes empty{
+0% {left:-0.1%; opacity:0.5;}
+100% {left:0.1%; opacity:0.9;}	
+}
+
+@keyframes clouds{
+	0% {left:-20%; opacity:0.9;}
+	100% {left:100%; opacity:0.9;}
+}
+
+@keyframes cloudAppearLeft{
+	0% {left:10%; opacity:0.0;}
+	15% {opacity:0.5;}
+	25% {opactiy:0.9;}
+	100% {left:100%; opacity:0.9;}
+}
+
+@keyframes cloudAppearCenter{
+	0% {left:60%; opacity:0.0;}
+	30% {opacity:0.5;}
+	60% {opacity:0.9;}
+	100% {left:100%; opacity:0.9;}
+}
+
+@keyframes cloudAppearRight{
+	0% {left:85%; opacity:0.0;}
+	30% {opacity:0.2;}
+	50% {opacity:0.4;}
+	100% {left:100%; opacity:0.7;}
+}
+
+@keyframes cloudAppearLeft_midNight{
+	0% {left:10%; opacity:0.0;}
+	15% {opacity:0.25;}
+	30% {opactiy:0.45;}
+	100% {left:100%; opacity:0.45;}
+}
+
+@keyframes cloudAppearCenter_midNight
+{
+	0% {left:60%; opacity:0.0;}
+	30% {opacity:0.25;}
+	60% {opacity:0.45;}
+	100% {left:100%; opacity:0.45;}
+}
+
+@keyframes cloudAppearLeft_lateNight{
+	0% {left:10%; opacity:0.0;}
+	15% {opacity:0.15;}
+	30% {opactiy:0.25;}
+	100% {left:100%; opacity:0.25;}
+}
+
+@keyframes cloudAppearCenter_lateNight{
+	0% {left:60%; opacity:0.0;}
+	30% {opacity:0.15;}
+	60% {opacity:0.25;}
+	100% {left:100%; opacity:0.25;}
+}
+
+@keyframes clouds_midNight{
+	0% {left:-20%; opacity:0.45;}
+	100% {left:100%; opacity:0.45;}
+}
+
+@keyframes clouds_lateNight{
+	0% {left:-20%; opacity:0.25;}
+	100% {left:100%; opacity:0.25;}
+}
+
+
+h1,h4 {margin:0;} /*reset*/ 
+/* basic styles */
+h1 { margin-bottom: 10px; }
+#settingsBox{
+	position: fixed;
+	top: 20px;
+	right: 20px; 
+	width: 390px;
+	padding: 10px 25px;
+	margin: 50px auto;
+	border-radius: 7px;
+	background: rgba(255, 255, 255, 0.4); 
+	color: #1F1F1F;
+}
+
+.buttonStyle{
+    background-color: #555555;
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+	border-radius: 4px;		
+    transition-duration: 0.6s;
+}
+
+.buttonStyle:hover{
+    background-color: beige;
+    color: #1F1F1F;
+}
+
+a:link{
+	color:#000000;
+    text-decoration: none;
+}
+
+a:visited{
+	color:#000000;
+    text-decoration: none;
+}
+
+a:hover{
+	color:#000000;
+    text-decoration: underline;
+}
+
+a:active{
+	color:#000000;
+    text-decoration: underline;
+}
+/* Backgrounds 
+I got the code for full backgrounds from: https://css-tricks.com/perfect-full-page-background-image/
+*/
+.midNight{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/11-Mid-Night.png') no-repeat center center fixed;
+    background-size: cover;
+    background-color: #000000;
+}
+.lateNight{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/12-Late-Night.png') no-repeat center center fixed;
+    background-size: cover;
+    background-color: #000000;
+}
+.earlyMorning{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/01-Early-Morning.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.midMorning{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/02-Mid-Morning.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.lateMorning{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/03-Late-Morning.png') no-repeat center center fixed;
+    background-size: cover;
+    background-color: #000000;
+}
+.earlyAfternoon{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/04-Early-Afternoon.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.midAfternoon{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/05-Mid-Afternoon.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.lateAfternoon{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/06-Late-Afternoon.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.earlyEvening{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/07-Early-Evening.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.midEvening{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/08-Mid-Evening.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.lateEvening{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/09-Late-Evening.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+.earlyNight{ 
+	transition: background-image 5s ease-in-out;
+	background: url('images/10-Early-Night.png') no-repeat center center fixed; 
+    background-size: cover;
+    background-color: #000000;
+}
+
+</style>
+</head>
+
+<body>
+	<div id="clouds">
+		<img id="empty" src="images/clouds/empty.png">
+		<img id="cloud1_earlyMorning" style="display:none;" src="images/clouds/cloud1a_earlyMorning.png">
+		<img id="cloud2_earlyMorning" style="display:none;" src="images/clouds/cloud2_earlyMorning.png">
+		<img id="cloud1_midMorning" style="display:none;" src="images/clouds/cloud2_midMorning.png">
+		<img id="cloud1_lateMorning" style="display:none;" src="images/clouds/cloud1a_lateMorning.png">
+		<img id="cloud2_lateMorning" style="display:none;" src="images/clouds/cloud2_lateMorning.png">
+		<img id="cloud1_afternoon"  style="display:none;" src="images/clouds/cloud1_afternoon.png">
+		<img id="cloud2_afternoon"  style="display:none;" src="images/clouds/cloud3_afternoon.png">
+		<img id="cloud3_afternoon"  style="display:none;" src="images/clouds/cloud1a_afternoon.png">
+		<img id="cloud1_earlyEvening"  style="display:none;" src="images/clouds/cloud1a_earlyEvening.png">
+		<img id="cloud2_earlyEvening"  style="display:none;" src="images/clouds/cloud3_earlyEvening.png">
+		<img id="cloud1_midEvening"  style="display:none;" src="images/clouds/cloud1a_midEvening.png">
+		<img id="cloud2_midEvening"  style="display:none;" src="images/clouds/cloud3_midEvening.png">
+		<img id="cloud1_lateEvening"  style="display:none;" src="images/clouds/cloud1a_lateEvening.png">
+		<img id="cloud2_lateEvening"  style="display:none;" src="images/clouds/cloud3_lateEvening.png">
+		<img id="cloud1_night"  style="display:none;" src="images/clouds/cloud1_night.png">
+		<img id="cloud2_night"  style="display:none;" src="images/clouds/cloud4_night.png">
+        
+	</div>
+	<img src="images/settings.png" style="position:fixed; top:10px; right:10px; width:25px;height:25px; opacity:0.5;" id="settingsIcon" onclick="settings()">
+	<div id="settingsBox" style="display:none;">
+		<h1 style="text-align:center">BitDay Settings</h1>
+		<form>
+			Please input your location's latitude and longitude:<br><br>
+			&nbsp; &bull; Latitude: <input type="number" id="latitudeBox" name="latitude" style="width: 50px; border-radius: 4px; background: rgba(255, 255, 255, 0.8);">
+			&nbsp; &nbsp; &bull; Longitude: <input type="number" id="longitudeBox" name="longitude" style="width: 50px; border-radius: 4px; background: rgba(255, 255, 255, 0.8);">
+			<br><br>
+			You can use <a href="http://www.latlong.net/" target="_blank"> LatLong.net</a> to figure out your geo coordinates.
+		</form>
+		<br>
+		<div id="buttons" style="float:center;">
+		<!--<button class="buttonStyle" onclick="testMe()">Test</button>
+		<button class="buttonStyle" onclick="randomBackground()">Rnd</button>-->
+		<button class="buttonStyle" onClick="reloadBackground()">Reload</button>
+		<button class="buttonStyle" onclick="closeSettings()">Cancel</button>
+		<button class="buttonStyle" onclick="saveSettings()">Save and Close</button>
+		<br><br>
+		</div>
+		<div style="font-size: 80%;">A big thank you to <a href="http://danny.care/bitday/download/" target="_blank">Danny Care</a> for these great wallpapers!</div>
+	</div>
+</body>
+</html>
+
